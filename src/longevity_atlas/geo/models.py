@@ -2,6 +2,12 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class GEOExpression:
+    probe_id: str
+    value: float
+
+
+@dataclass(frozen=True)
 class GEOSample:
     accession: str
     title: str
@@ -11,3 +17,4 @@ class GEOSample:
     sex: str | None
     age_years: float | None
     tissue: str | None
+    expression: tuple[GEOExpression, ...] = ()

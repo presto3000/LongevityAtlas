@@ -51,3 +51,18 @@ class GEOClient:
         )
         response.raise_for_status()
         return response.text
+
+
+    def get_sample(self, accession: str) -> str:
+        response = self.client.get(
+            "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi",
+            params={
+                "acc": accession,
+                "targ": "self",
+                "view": "full",
+                "form": "text",
+            },
+        )
+        response.raise_for_status()
+    
+        return response.text
