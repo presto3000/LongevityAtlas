@@ -56,9 +56,11 @@ def parse_raw_sample(raw: str) -> dict[str, str]:
         if not line.startswith("!Sample_"):
             continue
 
-        key, separator, value = line.partition("\t")
-
-        if not separator:
+        if "\t" in line:
+            key, _, value = line.partition("\t")
+        elif " = " in line:
+            key, _, value = line.partition(" = ")
+        else:
             continue
 
         key = key.removeprefix("!Sample_")
@@ -72,7 +74,13 @@ def parse_raw_sample(raw: str) -> dict[str, str]:
         }
 
         key = key_mapping.get(key, key)
-        data[key] = value
+        if key == "characteristics":
+            if "characteristics" in data:
+                data["characteristics"] += "\n" + value
+            else:
+                data["characteristics"] = value
+        else:
+            data[key] = value
 
     return data
 
@@ -104,3 +112,21 @@ def parse_expression_table(raw: str) -> list[GEOExpression]:
         )
 
     return expressions
+
+def parse_sample_response(raw: str) -> GEOSample:
+    data = parse_raw_sample(raw)
+    expression = parse_expression_table(raw)
+
+    sample = parse_sample(data)
+
+    return GEOSample(
+        accession=sample.accession,
+        title=sample.title,
+        sample_type=sample.sample_type,
+        source_name=sample.source_name,
+        organism=sample.organism,
+        sex=sample.sex,
+        age_years=sample.age_years,
+        tissue=sample.tissue,
+        expression=tuple(expression),
+    )

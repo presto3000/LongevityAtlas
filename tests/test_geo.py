@@ -1,7 +1,7 @@
 import respx
 
 from longevity_atlas.geo.client import GEOClient
-from longevity_atlas.geo.parser import parse_raw_sample, parse_sample
+from longevity_atlas.geo.parser import parse_raw_sample, parse_sample_response
 
 
 @respx.mock
@@ -53,22 +53,15 @@ def test_fetch():
 
 @respx.mock
 def test_get_sample():
-    search_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
-    fetch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
+    geo_url = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi"
 
-    respx.get(search_url).respond(
+    respx.get(geo_url).respond(
         status_code=200,
-        json={
-            "esearchresult": {
-                "idlist": ["123456"],
-            }
-        },
-    )
-
-    respx.get(fetch_url).respond(
-        status_code=200,
-        text="!Sample_geo_accession\tGSM2539397\n"
-        "!Sample_title\tleft atrium_4015",
+        text=(
+            "^SAMPLE = GSM2539397\n"
+            "!Sample_title = left atrium_4015\n"
+            "!Sample_geo_accession = GSM2539397\n"
+        ),
     )
 
     with GEOClient() as client:
@@ -79,38 +72,39 @@ def test_get_sample():
 
 @respx.mock
 def test_get_and_parse_sample():
-    search_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
-    fetch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
+    geo_url = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi"
 
-    respx.get(search_url).respond(
-        status_code=200,
-        json={
-            "esearchresult": {
-                "idlist": ["123456"],
-            }
-        },
-    )
-
-    respx.get(fetch_url).respond(
+    respx.get(geo_url).respond(
         status_code=200,
         text=(
-                "!Sample_geo_accession\tGSM2539397\n"
-                "!Sample_title\tleft atrium_4015\n"
-                "!Sample_type\tRNA\n"
-                "!Sample_source_name_ch1\tleft atrium\n"
-                "!Sample_organism_ch1\tHomo sapiens\n"
-                "!Sample_characteristics_ch1\tSex: male; age: 19 years; tissue: left atrium"
+            "^SAMPLE = GSM2539397\n"
+            "!Sample_title = left atrium_4015\n"
+            "!Sample_geo_accession = GSM2539397\n"
+            "!Sample_type = RNA\n"
+            "!Sample_source_name_ch1 = left atrium\n"
+            "!Sample_organism_ch1 = Homo sapiens\n"
+            "!Sample_characteristics_ch1 = Sex: male\n"
+            "!Sample_characteristics_ch1 = age: 19 years\n"
+            "!Sample_characteristics_ch1 = tissue: left atrium\n"
+            "!sample_table_begin\n"
+            "ID_REF     VALUE\n"
+            "1  0.249459841\n"
+            "2  0.108114464\n"
+            "3  -0.678952084\n"
+            "!sample_table_end\n"
         ),
     )
 
     with GEOClient() as client:
         raw = client.get_sample("GSM2539397")
-    
-    data = parse_raw_sample(raw)
-    sample = parse_sample(data)
 
+    data = parse_raw_sample(raw)
+    sample = parse_sample_response(raw)
+
+    assert data["accession"] == "GSM2539397"
     assert sample.accession == "GSM2539397"
     assert sample.organism == "Homo sapiens"
     assert sample.sex == "male"
     assert sample.age_years == 19
     assert sample.tissue == "left atrium"
+    assert len(sample.expression) == 3

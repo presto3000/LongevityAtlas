@@ -1,5 +1,10 @@
 from longevity_atlas.geo.models import GEOExpression
-from longevity_atlas.geo.parser import parse_expression_table, parse_raw_sample, parse_sample
+from longevity_atlas.geo.parser import (
+    parse_expression_table,
+    parse_raw_sample,
+    parse_sample,
+    parse_sample_response,
+)
 
 
 def test_parse_sample():
@@ -62,3 +67,33 @@ def test_parse_expression_table():
         GEOExpression(probe_id="2", value=0.108114464),
         GEOExpression(probe_id="3", value=-0.678952084),
     ]
+
+
+def test_parse_sample_response():
+    raw = (
+        "!Sample_geo_accession\tGSM2539397\n"
+        "!Sample_title\tleft atrium_4015\n"
+        "!Sample_type\tRNA\n"
+        "!Sample_source_name_ch1\tleft atrium\n"
+        "!Sample_organism_ch1\tHomo sapiens\n"
+        "!Sample_characteristics_ch1\tSex: male\n"
+        "!Sample_characteristics_ch1\tage: 19 years\n"
+        "!Sample_characteristics_ch1\ttissue: left atrium\n"
+        "!sample_table_begin\n"
+        "ID_REF     VALUE\n"
+        "1  0.249459841\n"
+        "2  0.108114464\n"
+        "3  -0.678952084\n"
+        "!sample_table_end\n"
+    )
+
+    sample = parse_sample_response(raw)
+
+    assert sample.accession == "GSM2539397"
+    assert sample.age_years == 19
+    assert sample.sex == "male"
+    assert sample.tissue == "left atrium"
+
+    assert len(sample.expression) == 3
+    assert sample.expression[0].probe_id == "1"
+    assert sample.expression[0].value == 0.249459841
