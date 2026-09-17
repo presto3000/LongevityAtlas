@@ -18,3 +18,9 @@ class GEOSample:
     age_years: float | None
     tissue: str | None
     expression: tuple[GEOExpression, ...] = ()
+
+@dataclass(frozen=True)
+class GEOSeries:
+    accession: str
+    title: str
+    sample_accessions: tuple[str, ...]

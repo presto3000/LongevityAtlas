@@ -1,6 +1,6 @@
 import re
 
-from longevity_atlas.geo.models import GEOExpression, GEOSample
+from longevity_atlas.geo.models import GEOExpression, GEOSample, GEOSeries
 
 
 def parse_age(value: str | None) -> float | None:
@@ -99,11 +99,21 @@ def parse_expression_table(raw: str) -> list[GEOExpression]:
         if line == "!sample_table_end":
             break
 
-        if not in_table or not line or line == "ID_REF     VALUE":
+        if not in_table or not line:
+            continue
+        
+        parts = line.split()
+
+        if parts == ["ID_REF", "VALUE"]:
             continue
 
-        probe_id, value = line.split()
-
+        parts = line.split()
+        
+        if len(parts) != 2:
+            continue
+        
+        probe_id, value = parts
+        
         expressions.append(
             GEOExpression(
                 probe_id=probe_id,
@@ -129,4 +139,32 @@ def parse_sample_response(raw: str) -> GEOSample:
         age_years=sample.age_years,
         tissue=sample.tissue,
         expression=tuple(expression),
+    )
+
+def parse_series_response(raw: str) -> GEOSeries:
+    data: dict[str, str] = {}
+    sample_accessions: list[str] = []
+
+    for line in raw.splitlines():
+        if not line.startswith("!Series_"):
+            continue
+
+        if " = " not in line:
+            continue
+
+        key, _, value = line.partition(" = ")
+
+        if key == "!Series_geo_accession":
+            data["accession"] = value
+
+        elif key == "!Series_title":
+            data["title"] = value
+
+        elif key == "!Series_sample_id":
+            sample_accessions.append(value)
+
+    return GEOSeries(
+        accession=data["accession"],
+        title=data["title"],
+        sample_accessions=tuple(sample_accessions),
     )
