@@ -1,7 +1,10 @@
+
+import httpx
+import pytest
 import respx
 
 from longevity_atlas.geo.client import GEOClient
-from longevity_atlas.geo.parser import parse_raw_sample, parse_sample_response
+from longevity_atlas.geo.models import GEOSample
 
 
 @respx.mock
@@ -67,8 +70,9 @@ def test_get_sample():
     with GEOClient() as client:
         result = client.get_sample("GSM2539397")
 
-    assert "GSM2539397" in result
-    assert "left atrium_4015" in result
+    assert isinstance(result, GEOSample)
+    assert result.accession == "GSM2539397"
+    assert result.title == "left atrium_4015"
 
 @respx.mock
 def test_get_and_parse_sample():
@@ -96,15 +100,29 @@ def test_get_and_parse_sample():
     )
 
     with GEOClient() as client:
-        raw = client.get_sample("GSM2539397")
+        sample = client.get_sample("GSM2539397")
 
-    data = parse_raw_sample(raw)
-    sample = parse_sample_response(raw)
-
-    assert data["accession"] == "GSM2539397"
     assert sample.accession == "GSM2539397"
     assert sample.organism == "Homo sapiens"
     assert sample.sex == "male"
     assert sample.age_years == 19
     assert sample.tissue == "left atrium"
     assert len(sample.expression) == 3
+    assert sample.expression[0].probe_id == "1"
+    assert sample.expression[0].value == 0.249459841
+
+    assert sample.expression[-1].probe_id == "3"
+    assert sample.expression[-1].value == -0.678952084
+
+@respx.mock
+def test_get_sample_not_found():
+    geo_url = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi"
+
+    respx.get(geo_url).respond(
+        status_code=404,
+        text="Not Found",
+    )
+
+    with GEOClient() as client:
+        with pytest.raises(httpx.HTTPStatusError):
+            client.get_sample("GSM_DOES_NOT_EXIST")

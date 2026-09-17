@@ -1,6 +1,9 @@
 
 import httpx
 
+from longevity_atlas.geo.models import GEOSample
+from longevity_atlas.geo.parser import parse_sample_response
+
 
 class GEOClient:
     """Client for retrieving data from NCBI GEO."""
@@ -53,7 +56,7 @@ class GEOClient:
         return response.text
 
 
-    def get_sample(self, accession: str) -> str:
+    def get_sample(self, accession: str) -> GEOSample:
         response = self.client.get(
             "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi",
             params={
@@ -65,4 +68,4 @@ class GEOClient:
         )
         response.raise_for_status()
     
-        return response.text
+        return parse_sample_response(response.text)
