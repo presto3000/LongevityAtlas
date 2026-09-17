@@ -1,9 +1,10 @@
-from longevity_atlas.geo.models import GEOExpression
+from longevity_atlas.geo.models import GEOExpression, GEOSeries
 from longevity_atlas.geo.parser import (
     parse_expression_table,
     parse_raw_sample,
     parse_sample,
     parse_sample_response,
+    parse_series_response,
 )
 
 
@@ -97,3 +98,27 @@ def test_parse_sample_response():
     assert len(sample.expression) == 3
     assert sample.expression[0].probe_id == "1"
     assert sample.expression[0].value == 0.249459841
+
+
+def test_parse_series_response():
+    raw = (
+        "^SERIES = GSE96752\n"
+        "!Series_title = Gene expression profile of human cardiac aging\n"
+        "!Series_geo_accession = GSE96752\n"
+        "!Series_sample_id = GSM2539397\n"
+        "!Series_sample_id = GSM2539398\n"
+        "!Series_sample_id = GSM2539399\n"
+        "!Series_platform_id = GPL23191\n"
+    )
+
+    result = parse_series_response(raw)
+
+    assert result == GEOSeries(
+        accession="GSE96752",
+        title="Gene expression profile of human cardiac aging",
+        sample_accessions=(
+            "GSM2539397",
+            "GSM2539398",
+            "GSM2539399",
+        ),
+    )
