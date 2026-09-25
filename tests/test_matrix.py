@@ -107,3 +107,19 @@ def test_inconsistent_probes_raise():
 
     with pytest.raises(ValueError, match="inconsistent probe"):
         dataset_to_matrix(broken_dataset)
+
+
+def test_sample_index():
+    dataset = make_dataset()
+    matrix = dataset_to_matrix(dataset)
+
+    assert matrix.sample_index("GSM1") == 0
+    assert matrix.sample_index("GSM2") == 1
+
+
+def test_sample_index_unknown_sample():
+    dataset = make_dataset()
+    matrix = dataset_to_matrix(dataset)
+
+    with pytest.raises(KeyError, match="Unknown sample accession"):
+        matrix.sample_index("GSM999")

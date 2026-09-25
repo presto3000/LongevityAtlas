@@ -18,6 +18,12 @@ class ExpressionMatrix:
     @property
     def feature_count(self) -> int:
         return self.values.shape[1] # columns
+    
+    def sample_index(self, accession: str) -> int:
+        try:
+            return self.sample_accessions.index(accession)
+        except ValueError as exc:
+            raise KeyError(f"Unknown sample accession: {accession}") from exc
 
 
 def dataset_to_matrix(dataset: GEODataset) -> ExpressionMatrix:
