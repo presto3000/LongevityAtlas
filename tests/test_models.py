@@ -98,48 +98,64 @@ def test_geo_dataset_detects_inconsistent_probes():
 
     assert dataset.has_consistent_probes() is False
 
-    def test_geo_dataset_has_valid_values():
-        sample = GEOSample(
-            accession="GSM1",
-            title="Sample 1",
-            sample_type="RNA",
-            source_name="heart",
-            organism="Homo sapiens",
-            sex="male",
-            age_years=50,
-            tissue="left atrium",
-            expression=(
-                GEOExpression("probe1", 0.1),
-                GEOExpression("probe2", -0.2),
-            ),
-        )
+def test_geo_dataset_has_valid_values():
+    sample = GEOSample(
+        accession="GSM1",
+        title="Sample 1",
+        sample_type="RNA",
+        source_name="heart",
+        organism="Homo sapiens",
+        sex="male",
+        age_years=50,
+        tissue="left atrium",
+        expression=(
+            GEOExpression("probe1", 0.1),
+            GEOExpression("probe2", -0.2),
+        ),
+    )
+    dataset = GEODataset(
+        series_accession="GSE96752",
+        samples=(sample,),
+    )
+    assert dataset.has_valid_values() is True
 
-        dataset = GEODataset(
-            series_accession="GSE96752",
-            samples=(sample,),
-        )
+def test_geo_dataset_detects_invalid_values():
+    sample = GEOSample(
+        accession="GSM1",
+        title="Sample 1",
+        sample_type="RNA",
+        source_name="heart",
+        organism="Homo sapiens",
+        sex="male",
+        age_years=50,
+        tissue="left atrium",
+        expression=(
+            GEOExpression("probe1", float("nan")),
+            GEOExpression("probe2", 0.2),
+        ),
+    )
+    dataset = GEODataset(
+        series_accession="GSE96752",
+        samples=(sample,),
+    )
+    assert dataset.has_valid_values() is False
 
-        assert dataset.has_valid_values() is True
+def test_sample_metadata():
+    sample = GEOSample(
+        accession="GSM1",
+        title="Sample 1",
+        sample_type="RNA",
+        source_name="heart",
+        organism="Homo sapiens",
+        sex="male",
+        age_years=42,
+        tissue="left atrium",
+    )
 
-    def test_geo_dataset_detects_invalid_values():
-        sample = GEOSample(
-            accession="GSM1",
-            title="Sample 1",
-            sample_type="RNA",
-            source_name="heart",
-            organism="Homo sapiens",
-            sex="male",
-            age_years=50,
-            tissue="left atrium",
-            expression=(
-                GEOExpression("probe1", float("nan")),
-                GEOExpression("probe2", 0.2),
-            ),
-        )
-    
-        dataset = GEODataset(
-            series_accession="GSE96752",
-            samples=(sample,),
-        )
-    
-        assert dataset.has_valid_values() is False
+    metadata = sample.metadata()
+
+    assert metadata.accession == "GSM1"
+    assert metadata.age_years == 42
+    assert metadata.sex == "male"
+    assert metadata.tissue == "left atrium"
+    assert metadata.organism == "Homo sapiens"

@@ -8,6 +8,14 @@ class GEOExpression:
     probe_id: str
     value: float
 
+@dataclass(frozen=True)
+class SampleMetadata:
+    accession: str
+    age_years: float | None
+    sex: str | None
+    tissue: str | None
+    organism: str | None
+
 
 @dataclass(frozen=True)
 class GEOSample:
@@ -20,6 +28,15 @@ class GEOSample:
     age_years: float | None
     tissue: str | None
     expression: tuple[GEOExpression, ...] = ()
+
+    def metadata(self) -> SampleMetadata:
+        return SampleMetadata(
+            accession=self.accession,
+            age_years=self.age_years,
+            sex=self.sex,
+            tissue=self.tissue,
+            organism=self.organism,
+    )
 
 @dataclass(frozen=True)
 class GEOSeries:
@@ -65,3 +82,6 @@ class GEODataset:
             for sample in self.samples
             for expression in sample.expression
         )
+
+
+    
