@@ -24,3 +24,19 @@ class GEOSeries:
     accession: str
     title: str
     sample_accessions: tuple[str, ...]
+
+@dataclass(frozen=True)
+class GEODataset:
+    series_accession: str
+    samples: tuple[GEOSample, ...]
+
+    @property
+    def sample_count(self) -> int:
+        return len(self.samples)
+
+    @property
+    def feature_count(self) -> int:
+        if not self.samples:
+            return 0
+
+        return len(self.samples[0].expression)

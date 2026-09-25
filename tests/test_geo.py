@@ -313,3 +313,70 @@ def test_get_series_samples_limit():
 
     assert len(samples) == 2
     assert all(len(sample.expression) == 3 for sample in samples)
+
+
+@respx.mock
+def test_get_dataset():
+    geo_url = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi"
+
+    series_raw = (
+        "^SERIES = GSE96752\n"
+        "!Series_title = Gene expression profile of human cardiac aging\n"
+        "!Series_geo_accession = GSE96752\n"
+        "!Series_sample_id = GSM2539397\n"
+        "!Series_sample_id = GSM2539398\n"
+    )
+
+    sample_template = (
+        "^SAMPLE = {accession}\n"
+        "!Sample_title = test sample\n"
+        "!Sample_geo_accession = {accession}\n"
+        "!Sample_type = RNA\n"
+        "!Sample_source_name_ch1 = left atrium\n"
+        "!Sample_organism_ch1 = Homo sapiens\n"
+        "!Sample_characteristics_ch1 = Sex: male\n"
+        "!Sample_characteristics_ch1 = age: 50 years\n"
+        "!Sample_characteristics_ch1 = tissue: left atrium\n"
+        "!sample_table_begin\n"
+        "ID_REF     VALUE\n"
+        "1  0.1\n"
+        "2  0.2\n"
+        "3  0.3\n"
+        "!sample_table_end\n"
+    )
+
+    respx.get(
+        geo_url,
+        params={
+            "acc": "GSE96752",
+            "targ": "self",
+            "view": "full",
+            "form": "text",
+        },
+    ).respond(
+        status_code=200,
+        text=series_raw,
+    )
+
+    for accession in ("GSM2539397", "GSM2539398"):
+        respx.get(
+            geo_url,
+            params={
+                "acc": accession,
+                "targ": "self",
+                "view": "full",
+                "form": "text",
+            },
+        ).respond(
+            status_code=200,
+            text=sample_template.format(accession=accession),
+        )
+
+    with GEOClient() as client:
+        dataset = client.get_dataset("GSE96752")
+
+    assert dataset.series_accession == "GSE96752"
+    assert dataset.sample_count == 2
+    assert dataset.feature_count == 3
+    assert dataset.samples[0].accession == "GSM2539397"
+    assert dataset.samples[1].accession == "GSM2539398"
