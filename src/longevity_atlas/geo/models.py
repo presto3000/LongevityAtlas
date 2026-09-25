@@ -40,3 +40,20 @@ class GEODataset:
             return 0
 
         return len(self.samples[0].expression)
+
+    def probe_ids(self) -> tuple[str, ...]:
+        if not self.samples:
+            return ()
+        return tuple(
+            expression.probe_id
+            for expression in self.samples[0].expression
+    )
+
+    def has_consistent_probes(self) -> bool:
+        expected = self.probe_ids()
+
+        return all(
+            tuple(expression.probe_id for expression in sample.expression) == expected
+            for sample in self.samples
+        )
+
