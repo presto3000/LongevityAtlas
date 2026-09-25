@@ -1,3 +1,5 @@
+
+import math
 from dataclasses import dataclass
 
 
@@ -57,3 +59,9 @@ class GEODataset:
             for sample in self.samples
         )
 
+    def has_valid_values(self) -> bool:
+        return all(
+            math.isfinite(expression.value)
+            for sample in self.samples
+            for expression in sample.expression
+        )
