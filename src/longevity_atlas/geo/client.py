@@ -2,7 +2,7 @@
 
 import httpx
 
-from longevity_atlas.geo.models import GEOSample, GEOSeries
+from longevity_atlas.geo.models import GEODataset, GEOSample, GEOSeries
 from longevity_atlas.geo.parser import parse_sample_response, parse_series_response
 
 
@@ -101,13 +101,8 @@ class GEOClient:
         return parse_series_response(response.text)
 
 
-    def get_series_samples(
-        self,
-        accession: str,
-        limit: int | None = None,
-) ->     list[GEOSample]:
+    def get_series_samples(self, accession: str, limit: int | None = None,) -> list[GEOSample]:
         series = self.get_series(accession)
-    
         sample_accessions = series.sample_accessions
     
         if limit is not None:
@@ -117,3 +112,19 @@ class GEOClient:
             self.get_sample(sample_accession)
             for sample_accession in sample_accessions
         ]
+    
+    def get_dataset(self, accession: str, limit: int | None = None,) -> GEODataset:
+        series = self.get_series(accession)
+        sample_accessions = series.sample_accessions
+    
+        if limit is not None:
+            sample_accessions = sample_accessions[:limit]
+    
+        samples = tuple(
+            self.get_sample(sample_accession)
+            for sample_accession in sample_accessions
+        )
+    
+        return GEODataset(series_accession=series.accession,
+            samples=samples,
+    )
